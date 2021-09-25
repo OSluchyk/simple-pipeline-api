@@ -14,7 +14,7 @@ The library provides major components to construct, configure and run simple dat
 
 Run next command to build and install simple-pipeline library to the local Maven repository
 
-    mvn -f simple-pipeline/pom.xml clean install
+    mvn -f simple-pipeline-api/pom.xml clean install
 
 
 After this you can include this library to the project as a regular maven dependency
