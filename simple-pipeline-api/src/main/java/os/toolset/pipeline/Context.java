@@ -12,6 +12,7 @@ public class Context<T> {
     private final PipelineConfig pipelineConfig;
     private final Map<String, T> snapshots;
 
+
     public Context(PipelineConfig pipelineConfig) {
         this.pipelineConfig = pipelineConfig;
         this.snapshots = new HashMap<>();

@@ -4,13 +4,10 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>org.example</groupId>
+    <groupId>os.toolset</groupId>
     <artifactId>simple-pipeline</artifactId>
     <packaging>pom</packaging>
-    <version>1.0-SNAPSHOT</version>
-    <modules>
-        <module>simple-pipeline-api</module>
-    </modules>
+    <version>1.0.0</version>
 
     <properties>
         <maven.compiler.source>16</maven.compiler.source>
@@ -19,17 +16,30 @@
 
     <dependencyManagement>
         <dependencies>
-            <!--            Config-->
+            <!--Config-->
             <dependency>
                 <groupId>com.typesafe</groupId>
                 <artifactId>config</artifactId>
                 <version>1.4.1</version>
             </dependency>
-            <!--            Logging-->
+            <!--Utils-->
+            <dependency>
+                <groupId>com.google.auto.service</groupId>
+                <artifactId>auto-service-annotations</artifactId>
+                <version>1.0</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-csv</artifactId>
+                <version>1.9.0</version>
+            </dependency>
+
+            <!--Logging-->
             <dependency>
                 <groupId>org.apache.logging.log4j</groupId>
                 <artifactId>log4j-bom</artifactId>
-                <version>2.1</version>
+                <version>2.14.1</version>
                 <scope>import</scope>
                 <type>pom</type>
             </dependency>
