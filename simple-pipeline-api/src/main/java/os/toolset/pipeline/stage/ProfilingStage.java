@@ -1,12 +1,11 @@
 package os.toolset.pipeline.stage;
 
-import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import os.toolset.pipeline.Context;
 import os.toolset.pipeline.ExecutionError;
 
 public class ProfilingStage implements Stage{
-    private final Logger logger = LogManager.getLogger();
+    private final Logger logger = logger();
 
     private final Stage stage;
 

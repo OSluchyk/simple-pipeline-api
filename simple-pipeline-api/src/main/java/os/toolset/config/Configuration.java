@@ -1,8 +1,9 @@
 package os.toolset.config;
 
+import java.io.Serializable;
 import java.util.List;
 
-public interface Configuration {
+public interface Configuration extends Serializable {
 
     ConfigValue<Boolean> getBoolean(String name);
 

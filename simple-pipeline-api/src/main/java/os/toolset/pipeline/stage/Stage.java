@@ -3,6 +3,10 @@ package os.toolset.pipeline.stage;
 import os.toolset.config.StageConfig;
 import os.toolset.pipeline.Context;
 import os.toolset.pipeline.ExecutionError;
+import os.toolset.utils.Loggable;
+
+import java.io.Serializable;
+
 
 /**
  * Stages in a pipeline represent the logical steps needed to process data.
@@ -10,7 +14,7 @@ import os.toolset.pipeline.ExecutionError;
  * <p>
  * Stage is supposed to be stateless. So, no information about previous processing is stored.
  */
-public interface Stage<C extends Context> {
+public interface Stage<C extends Context> extends Loggable, Serializable {
 
     /**
      * @return unique identifier of the stage,
@@ -41,7 +45,7 @@ public interface Stage<C extends Context> {
      * @param context pipeline execution context
      */
     default void revertChanges(C context) {
-        //do nothing by default
+        logger().info("Stage {}. Nothing to rollback.", name());
     }
 
     /**
@@ -50,6 +54,7 @@ public interface Stage<C extends Context> {
      * @param context pipeline execution context
      */
     default void terminate(C context) {
+        logger().info("Stage {} is terminated", name());
     }
 
     default StageConfig stageConfig(C context) {

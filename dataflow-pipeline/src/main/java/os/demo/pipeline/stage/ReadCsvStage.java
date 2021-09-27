@@ -1,6 +1,7 @@
 package os.demo.pipeline.stage;
 
 import com.google.auto.service.AutoService;
+import org.apache.beam.sdk.coders.RowCoder;
 import org.apache.beam.sdk.io.FileIO;
 import org.apache.beam.sdk.schemas.Schema;
 import org.apache.beam.sdk.transforms.DoFn;
@@ -10,6 +11,7 @@ import org.apache.beam.sdk.values.Row;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
+import org.apache.logging.log4j.Logger;
 import os.demo.pipeline.DataflowExecutionContext;
 import os.toolset.config.Configuration;
 import os.toolset.config.StageConfig;
@@ -28,6 +30,7 @@ import static org.apache.beam.sdk.schemas.Schema.Field.nullable;
 
 @AutoService(Stage.class)
 public class ReadCsvStage implements Stage<DataflowExecutionContext> {
+    private final Logger logger = logger();
     @Override
     public String name() {
         return "read-csv";
@@ -37,44 +40,51 @@ public class ReadCsvStage implements Stage<DataflowExecutionContext> {
     public void run(DataflowExecutionContext context) throws ExecutionError {
         StageConfig stageConfig = stageConfig(context);
         String inputPath = stageConfig.getString("inputFileSpec").required();
+        logger.info("Loading data from {}", inputPath);
 
+        Schema schema = generateSchema(stageConfig.getString("headers").required().split(","));
         PCollection<Row> inputCsv = context.getPipeline()
                 .apply(match().filepattern(inputPath))
                 .apply(readMatches())
-                .apply("ReadCSV", ParDo.of(new CsvParser(stageConfig)));
+                .apply("ReadCSV", ParDo.of(new CsvParser(stageConfig, schema))).setCoder(RowCoder.of(schema));
 
         context.addSnapshot(stageConfig.getString("output").orElse(name()), inputCsv);
 
     }
 
+    private Schema generateSchema(String[] names) {
+        Schema.Builder builder = Schema.builder();
+        for (String name : names) {
+            builder=builder.addField(nullable(name, Schema.FieldType.STRING));
+        }
+        return builder.build();
+    }
+
     static class CsvParser extends DoFn<ReadableFile, Row> {
         private final Configuration conf;
+        private final  Schema schema;
 
-        CsvParser(Configuration conf) {
+        CsvParser(Configuration conf,  Schema schema) {
             this.conf = conf;
+            this.schema =schema;
         }
 
         @DoFn.ProcessElement
         public void process(@DoFn.Element FileIO.ReadableFile element, DoFn.OutputReceiver<Row> receiver) throws IOException {
             InputStream is = Channels.newInputStream(element.open());
             Reader reader = new InputStreamReader(is);
-            Boolean hasHeader = conf.getBoolean("hasHeader").orElse(false);
+            Boolean hasHeader = conf.getBoolean("hasHeaders").orElse(false);
 
             CSVFormat.Builder csvFormat = CSVFormat.DEFAULT
                     .builder()
                     .setDelimiter(conf.getString("delimiter").orElse(","))
-                    ;
+                    .setSkipHeaderRecord(hasHeader)
+                    .setHeader(conf.getString("headers").required().split(","));
 
-            if(hasHeader){
-                csvFormat = csvFormat.setHeader().setSkipHeaderRecord(hasHeader);
-            }else{
-                csvFormat=csvFormat.setHeader(conf.getString("headers").required().split(","));
-            }
 
             CSVParser csvParser = csvFormat.build().parse(reader);
             List<String> headerNames = csvParser.getHeaderNames();
 
-            Schema schema = generateSchema(headerNames);
 
             for (CSVRecord csv : csvParser) {
                 Row.Builder rowBuilder = Row.withSchema(schema);
@@ -92,12 +102,6 @@ public class ReadCsvStage implements Stage<DataflowExecutionContext> {
             }
         }
 
-        private Schema generateSchema(List<String> names) {
-            Schema.Builder builder = Schema.builder();
-            for (String name : names) {
-                builder=builder.addField(nullable(name, Schema.FieldType.STRING));
-            }
-            return builder.build();
-        }
+
     }
 }

@@ -19,8 +19,8 @@
         <maven-shade-plugin.version>3.1.0</maven-shade-plugin.version>
         <maven-jar-plugin.version>3.0.2</maven-jar-plugin.version>
 
-        <maven.compiler.source>16</maven.compiler.source>
-        <maven.compiler.target>16</maven.compiler.target>
+        <maven.compiler.source>8</maven.compiler.source>
+        <maven.compiler.target>8</maven.compiler.target>
     </properties>
     <dependencyManagement>
         <dependencies>

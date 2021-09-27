@@ -18,8 +18,8 @@ import static java.text.MessageFormat.format;
 public class Pipeline {
     private final Logger logger = LogManager.getLogger();
 
-    private final PipelineConfig pipelineConfig;
-    private final StageRegistry stageRegistry;
+    protected final PipelineConfig pipelineConfig;
+    protected final StageRegistry stageRegistry;
 
     public Pipeline(PipelineConfig pipelineConfig) {
         this.pipelineConfig = pipelineConfig;
@@ -27,7 +27,7 @@ public class Pipeline {
     }
 
     public void run() throws ExecutionError {
-        Context context = new Context(pipelineConfig);
+        Context context = createExecutionContext();
         Deque<Stage> completed = new LinkedList<>();
         try {
             for (StageConfig stageConfig : context.pipelineConfig().stageConfigs()) {
@@ -40,15 +40,19 @@ public class Pipeline {
                 }
             }
             completed.forEach(stg -> stg.terminate(context));
-        } catch (ExecutionError executionError) {
-            logger.error(format("Pipeline failed: {0}", executionError.getMessage()), executionError);
+        } catch (Exception error) {
+            logger.error(format("Pipeline failed: {0}", error.getMessage()), error);
             Iterator<Stage> it = completed.descendingIterator();
             while (it.hasNext()) {
                 it.next().revertChanges(context);
             }
-            throw executionError;
+            throw error;
         }
 
+    }
+
+    protected Context createExecutionContext() {
+        return new Context(pipelineConfig);
     }
 
     public static void main(String[] args) throws IOException, ExecutionError {

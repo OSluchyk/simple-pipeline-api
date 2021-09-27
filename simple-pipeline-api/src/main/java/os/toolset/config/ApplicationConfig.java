@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 
 import static com.typesafe.config.ConfigFactory.parseReader;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -23,7 +24,7 @@ public final class ApplicationConfig extends BaseConfiguration{
     }
 
     public PipelineConfig pipelineConfig() throws IOException {
-        return pipelineConfig(Path.of(getString(EXTERNAL_CONFIG_FILE).required()));
+        return pipelineConfig(Paths.get(getString(EXTERNAL_CONFIG_FILE).required()));
 
     }
 
