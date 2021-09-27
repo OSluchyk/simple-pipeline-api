@@ -12,8 +12,11 @@ import java.io.IOException;
 import java.util.Deque;
 import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.List;
+import java.util.stream.Collectors;
 
 import static java.text.MessageFormat.format;
+import static java.util.stream.Collectors.toList;
 
 public class Pipeline {
     private final Logger logger = LogManager.getLogger();
