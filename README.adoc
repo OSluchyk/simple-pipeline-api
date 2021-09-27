@@ -78,12 +78,12 @@ steps:[
     sep: ","
     headers: true
     path: "file.csv"
-    dataset.id: csv
+    output.id: csv
   }
   {
     name: save-as-json
-    dataset.id: csv
-    path: "file.json"
+    input.id: csv
+    output.file: "file.json"
   }
 ]
 ----
