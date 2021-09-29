@@ -4,18 +4,15 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import os.toolset.config.ApplicationConfig;
 import os.toolset.config.PipelineConfig;
-import os.toolset.config.StageConfig;
 import os.toolset.pipeline.stage.Stage;
 import os.toolset.pipeline.stage.StageRegistry;
 
 import java.io.IOException;
 import java.util.Deque;
 import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.stream.Collectors;
 
 import static java.text.MessageFormat.format;
+import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toList;
 
 public class Pipeline {
@@ -30,33 +27,53 @@ public class Pipeline {
     }
 
     public void run() throws ExecutionError {
-        Context context = createExecutionContext();
-        Deque<Stage> completed = new LinkedList<>();
+        Context context = getContext();
         try {
-            for (StageConfig stageConfig : context.pipelineConfig().stageConfigs()) {
-                Stage stage = stageRegistry.get(stageConfig);
-                if (stage.isReady(context)) {
-                    stage.run(context);
-                    completed.add(stage);
-                }else{
-                    throw new ExecutionError(format("Precondition failed: Stage ''{0}'' cannot be executed.", stage.name()));
-                }
-            }
-            completed.forEach(stg -> stg.terminate(context));
+            runPipeline(context);
+            onSuccess(context);
         } catch (Exception error) {
             logger.error(format("Pipeline failed: {0}", error.getMessage()), error);
-            Iterator<Stage> it = completed.descendingIterator();
-            while (it.hasNext()) {
-                it.next().revertChanges(context);
-            }
+            onFailure(context);
             throw error;
         }
 
     }
 
-    protected Context createExecutionContext() {
+    protected Context getContext() {
         return new Context(pipelineConfig);
     }
+
+    protected void runPipeline(Context context) throws ExecutionError {
+        for (Stage stage : stages(context)) {
+            if (stage.isReady(context)) {
+                stage.run(context);
+                context.markCompleted(stage);
+            } else {
+                throw new ExecutionError(format("Precondition failed: Stage ''{0}'' cannot be executed.", stage.name()));
+            }
+        }
+    }
+
+
+    public void onFailure(Context context) {
+        Iterator<Stage> it = context.getCompletedStages().descendingIterator();
+        while (it.hasNext()) {
+            it.next().onFailure(context);
+        }
+    }
+
+    public void onSuccess(Context context) {
+        Deque<Stage> completedStages = context.getCompletedStages();
+        completedStages.forEach(stage -> stage.onSuccess(context));
+    }
+
+    private Iterable<? extends Stage> stages(Context context) {
+        return context.pipelineConfig().stageConfigs()
+                .stream()
+                .map(conf -> requireNonNull(stageRegistry.get(conf), "Unknown stage " + conf.name()))
+                .collect(toList());
+    }
+
 
     public static void main(String[] args) throws IOException, ExecutionError {
         ApplicationConfig appConfig = ApplicationConfig.get();

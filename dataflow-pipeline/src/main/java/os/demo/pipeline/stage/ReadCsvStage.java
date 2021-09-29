@@ -12,9 +12,9 @@ import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
 import org.apache.logging.log4j.Logger;
-import os.demo.pipeline.DataflowExecutionContext;
 import os.toolset.config.Configuration;
 import os.toolset.config.StageConfig;
+import os.toolset.pipeline.Context;
 import os.toolset.pipeline.ExecutionError;
 import os.toolset.pipeline.stage.Stage;
 
@@ -29,21 +29,22 @@ import static org.apache.beam.sdk.io.FileIO.*;
 import static org.apache.beam.sdk.schemas.Schema.Field.nullable;
 
 @AutoService(Stage.class)
-public class ReadCsvStage implements Stage<DataflowExecutionContext> {
+public class ReadCsvStage extends DataflowStage{
     private final Logger logger = logger();
+
     @Override
     public String name() {
         return "read-csv";
     }
 
     @Override
-    public void run(DataflowExecutionContext context) throws ExecutionError {
+    public void run(Context<PCollection<Row>> context) throws ExecutionError {
         StageConfig stageConfig = stageConfig(context);
         String inputPath = stageConfig.getString("inputFileSpec").required();
         logger.info("Loading data from {}", inputPath);
 
         Schema schema = generateSchema(stageConfig.getString("headers").required().split(","));
-        PCollection<Row> inputCsv = context.getPipeline()
+        PCollection<Row> inputCsv = getPipeline(context)
                 .apply(match().filepattern(inputPath))
                 .apply(readMatches())
                 .apply("ReadCSV", ParDo.of(new CsvParser(stageConfig, schema))).setCoder(RowCoder.of(schema));
@@ -55,18 +56,18 @@ public class ReadCsvStage implements Stage<DataflowExecutionContext> {
     private Schema generateSchema(String[] names) {
         Schema.Builder builder = Schema.builder();
         for (String name : names) {
-            builder=builder.addField(nullable(name, Schema.FieldType.STRING));
+            builder = builder.addField(nullable(name, Schema.FieldType.STRING));
         }
         return builder.build();
     }
 
     static class CsvParser extends DoFn<ReadableFile, Row> {
         private final Configuration conf;
-        private final  Schema schema;
+        private final Schema schema;
 
-        CsvParser(Configuration conf,  Schema schema) {
+        CsvParser(Configuration conf, Schema schema) {
             this.conf = conf;
-            this.schema =schema;
+            this.schema = schema;
         }
 
         @DoFn.ProcessElement
@@ -94,8 +95,8 @@ public class ReadCsvStage implements Stage<DataflowExecutionContext> {
                     String fieldName = field.getName();
                     String value = csv.get(fieldName);
 
-                    valueBuilder = valueBuilder== null ? rowBuilder.withFieldValue(fieldName, value)
-                    : valueBuilder.withFieldValue(fieldName, value);
+                    valueBuilder = valueBuilder == null ? rowBuilder.withFieldValue(fieldName, value)
+                            : valueBuilder.withFieldValue(fieldName, value);
                 }
                 receiver.output(valueBuilder.build());
 
