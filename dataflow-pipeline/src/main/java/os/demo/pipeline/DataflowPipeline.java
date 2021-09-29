@@ -23,13 +23,13 @@ public class DataflowPipeline extends Pipeline {
     }
 
     @Override
-    public void run() throws ExecutionError {
-        super.run();
-        this.pipeline.run().waitUntilFinish();
+    protected void runPipeline(Context context) throws ExecutionError {
+        super.runPipeline(context);
+        pipeline.run().waitUntilFinish();
     }
 
     @Override
-    protected Context createExecutionContext() {
+    protected Context getContext() {
         return new DataflowExecutionContext(this.pipeline, pipelineConfig);
     }
 

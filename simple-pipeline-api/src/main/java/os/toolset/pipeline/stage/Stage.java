@@ -14,7 +14,7 @@ import java.io.Serializable;
  * <p>
  * Stage is supposed to be stateless. So, no information about previous processing is stored.
  */
-public interface Stage<C extends Context> extends Loggable, Serializable {
+public interface Stage<T> extends Loggable, Serializable {
 
     /**
      * @return unique identifier of the stage,
@@ -27,7 +27,7 @@ public interface Stage<C extends Context> extends Loggable, Serializable {
      *
      * @return
      */
-    default boolean isReady(C context) {
+    default boolean isReady(Context<T> context) {
         return true;
     }
 
@@ -35,7 +35,7 @@ public interface Stage<C extends Context> extends Loggable, Serializable {
      * @param context pipeline execution context
      * @throws ExecutionError
      */
-    void run(C context) throws ExecutionError;
+    void run(Context<T> context) throws ExecutionError;
 
     /**
      * This method will be called when the pipeline execution failed
@@ -44,7 +44,7 @@ public interface Stage<C extends Context> extends Loggable, Serializable {
      *
      * @param context pipeline execution context
      */
-    default void revertChanges(C context) {
+    default void onFailure(Context<T> context) {
         logger().info("Stage {}. Nothing to rollback.", name());
     }
 
@@ -53,11 +53,11 @@ public interface Stage<C extends Context> extends Loggable, Serializable {
      * and can be used to update some metadata required by this specific stage on the next run.
      * @param context pipeline execution context
      */
-    default void terminate(C context) {
+    default void onSuccess(Context<T> context) {
         logger().info("Stage {} is terminated", name());
     }
 
-    default StageConfig stageConfig(C context) {
+    default StageConfig stageConfig(Context<T> context) {
         return context.pipelineConfig().stageConfig(name());
     }
 }
